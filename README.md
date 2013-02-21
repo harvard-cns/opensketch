@@ -48,10 +48,11 @@ counters in the SRAM Counter. We use the entire 4.5
 MB on-board SRAM to store the counters.
 
 This OpenSketch modules should be inserted into the reference switch pipeline and then compiled following
-NetFPGA user guide. We implemented heavy hitters and superspreaders
+NetFPGA developer guide( http://wiki.netfpga.org/foswiki/bin/view/NetFPGA/OneGig/DevelopersGuide). 
+We implemented heavy hitters and superspreaders
 as examples. We plan to implement more sketch functions in the future.
 
 --------------------------
 We are willing to hear your feedback. If you have further questions, feel free to contact us. 
-rmiao@usc.edu lavanyaj@cs.stanford.edu
+rmiao@usc.edu  lavanyaj@cs.stanford.edu
 
