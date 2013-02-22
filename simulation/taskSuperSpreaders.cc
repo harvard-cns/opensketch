@@ -6,14 +6,17 @@ TaskSuperSpreaders::TaskSuperSpreaders(){
 TaskSuperSpreaders::~TaskSuperSpreaders(){
 }
 
-void TaskSuperSpreaders::setUserPreferencesDirectly(int field1, int numRows, int countersPerRow,\
-						    int field2, int numBits) {
+void TaskSuperSpreaders::setUserPreferencesDirectly(int field1, int numRows, int countersPerRow, int field2, int numBits, double ratio) {
   countMin.setup(field1, numRows, countersPerRow);
   bitmap.setup(field2, numBits);
+  samplingRatio = ratio;
 }
 
 void TaskSuperSpreaders::configureDataPlane(DataPlane &dataPlane) {
-  
+  dataPlane.addSampling(countMin.getHashInfo().field*10\
+			+bitmap.getHashInfo().field,   \
+			MAXUINT32 * samplingRatio);
+
   cm_id = dataPlane.addHashFunctions(countMin.getHashInfo());
   bm_id = dataPlane.addHashFunctions(bitmap.getHashInfo());
 

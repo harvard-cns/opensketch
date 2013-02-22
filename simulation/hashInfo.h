@@ -7,7 +7,7 @@ using namespace std;
 typedef struct HashInfo {
   int field;
   int numHashValues;
-  int range;
+  unsigned long long range;
   int rev; // 1 if reversible, 0 otherwise
 } tHashInfo;
 

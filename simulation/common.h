@@ -36,6 +36,7 @@ const double E = (double) (2.71828182846);
 
 const int FIELD_SRCIP = 1;
 const int FIELD_DSTIP = 2;
+const int FIELD_SRCIP_DSTIP = 12;
 
 const int UPDATETYPE_SET = 1;
 const int UPDATETYPE_INCREMENT = 2;
@@ -75,7 +76,7 @@ namespace hash{
 uint32 os_dietz_thorup32(uint32 x, uint32 bins, uint64 a, uint64 b);
 uint8 os_dietz8to3(uint8 x, uint8 a);
 uint32 reversible4096(uint32 value, uint32 bins, uint64 a);
-
+uint32 os_dietz64to32(uint64 x, uint64 a);
 // ----------- from Reversible Sketch Code at http://www.zhichunli.org/software/download.php?file=RevSketch-1.0.tar.gz 
 
 double os_current_time();

@@ -8,9 +8,10 @@
 
 class TaskSuperSpreaders
 {
+  double samplingRatio;
   SketchCountMin countMin;
   SketchBitmap bitmap;
-
+  
   int task_id; // to get sram from dataplane
   int cm_id; // not used
   int bm_id;
@@ -35,7 +36,7 @@ class TaskSuperSpreaders
   //void setUserPreferencesGivenError(int field, double errorPc, double confidence);
   //void setUserPreferencesGivenSpace(int field, int spaceB, double confidence);
   void setUserPreferencesDirectly(int field1, int numRows, int countersPerRow, \
-				  int field2, int numBits);
+				  int field2, int numBits, double ratio);
 
   void configureDataPlane(DataPlane &dataPlane);
   void getHashSeedsFromDataPlane(const DataPlane &dataPlane);

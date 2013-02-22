@@ -23,7 +23,7 @@ int main() {
 
   // Magic numbers from 4.2/ sketch manager
   ss.setUserPreferencesDirectly(field1, numRows, countersPerRow,\
-				field2, numBits);
+				field2, numBits, 44.3/200);
 
   ss.configureDataPlane(dp);
   dp.getHashByField();
@@ -89,6 +89,7 @@ int main() {
 	}
       }
       printf("infile is no longer good.\n");
+      printf("sampled %d out of %d i.e. %f fraction\n", dp.sampled, packetCount, (1.0*dp.sampled/ packetCount));
     }
       ss.updateCountersFromDataPlane(dp);
       inet_aton("219.46.141.122", &tmp);      

@@ -48,6 +48,19 @@ uint32 reversible4096(uint32 value, uint32 bins, uint64 hasha) {
   return index;
 
 }
+
+
+uint32 os_dietz64to32(uint64 x, uint64 a) {
+  if (!(a%2)) a--;
+  //cout << "a*x (lower 64?): " << a*x << "\n";
+  //cout << "a*x & MAXUINT32 (lower32): " << (a*x & (MAXUINT32)) << "\n";
+  //cout << "a*x >> 32 (high32, maybe padded with 1s on right): " << (a*x >> 32) << "\n";
+  //cout << "a*x >> (uint32) (32  & MAXUINT32 (high32)): " << (uint32) ((a*x >> 32) & (MAXUINT32)) << "\n";
+  // all work as expected .. but to be safe & MAXUINT32
+  return (((a*x) >> 32) & MAXUINT32);
+}
+
+
 // ----------- from Reversible Sketch Code at http://www.zhichunli.org/software/download.php?file=RevSketch-1.0.tar.gz 
 
 double os_current_time()
@@ -70,3 +83,4 @@ uint32 os_rand32bit()
     base = (base<<16) | rand();
   return(base);
 }
+

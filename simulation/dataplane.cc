@@ -10,14 +10,23 @@ DataPlane::DataPlane() {
     hashB.push_back(hash::B[i]);
   }
   mangler = new Mangler();
+  sampleField = -1;
+  sampled = 0;
 }
 
 DataPlane::~DataPlane(){
 }
 
-uint32 DataPlane::getField(const Packet& p, int field) {
+uint64 DataPlane::getField(const Packet& p, int field) {
     if (field == FIELD_SRCIP) return p.srcip;
     else if (field == FIELD_DSTIP) return p.dstip;
+    else if (field == FIELD_SRCIP_DSTIP) {
+      uint64 tmp = p.srcip;
+      tmp << 32;
+      tmp += p.dstip;
+      return tmp;
+    }
+
   }
   
 void DataPlane::getHashValues(int sketch_id, vector<uint32>& hashValues) {
@@ -60,6 +69,14 @@ int DataPlane::setSRAMSize(int sramSize){
     return meas_id;
   }
 
+void DataPlane::addSampling(int field, uint32 threshold) {
+    sampleField = field;
+    sampleThreshold = threshold;
+    printf("Sampling with ratio %f\n", (1.0*sampleThreshold)/MAXUINT32);
+  }
+ 
+
+
 int DataPlane::addHashFunctions(const tHashInfo& hashInfo) {
   tHashInfo myHashInfo = hashInfo;
   int task_id;
@@ -69,13 +86,19 @@ int DataPlane::addHashFunctions(const tHashInfo& hashInfo) {
   }
   else if (hashInfo.rev == HASHTYPE_REVERSIBLE8TO3) {
     task_id = perSketchRevHashInfo.size()+1+100;
-    perSketchRevHashInfo.insert(pair<int, tHashInfo> (task_id, myHashInfo));
-  } 
+    perSketchRevHashInfo.insert(pair<int, tHashInfo> (task_id, myHashInfo));}
   
   return task_id;
 }    
 
 void DataPlane::processPacket(const Packet& p, int task_id) {
+
+
+  if (!doSample(p, sampleField, sampleThreshold))
+     return;
+
+  sampled++;
+
   //printf("calling doHash.\n");
   doHash(p, perFieldHashInfo, perFieldHashValues);
 
@@ -185,30 +208,38 @@ void DataPlane::doSRAM(const Packet& p, int task_id){
     
   if (p.srcip == -873408477) {
     printf("check!!\n");
-  }
+    printf("counterInfos.size() %u\n", counterInfos.size());
+ }
 
   vector<tCounterInfo>::iterator it;
   for (it = counterInfos.begin(); it != counterInfos.end(); ++it) {
     doSRAM_updateAddresses(addresses, *it);
+
+  if (p.srcip == -873408477) {
+    printf("addresses.size() %u\n", addresses.size());
+ }
+    
     if (it->updateType == UPDATETYPE_SET || it->updateType == UPDATETYPE_INCREMENT) {
       uint32 addr;
+     
       while(!addresses.empty()) {
 	addr = addresses.front();
 	addresses.pop();
-	if (it->updateType == UPDATETYPE_SET) perTaskSRAM[task_id][addr] = 1;
+	if (it->updateType == UPDATETYPE_SET) 
+	  perTaskSRAM[task_id][addr] = 1;
 	else if (it->updateType == UPDATETYPE_INCREMENT) {
 	  perTaskSRAM[task_id][addr]++;
 	}
 	    // -873408477 2056072923
 	if (p.srcip == -873408477) {
-	      printf("perTaskSRAM[%d][%d] is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
-	    }
-
+	  printf("perTaskSRAM[%d][%d] is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
 	}
-	//if (p.srcip == 2056072923) {printf("\n");}
-	addresses.push(it->nextOffset);
+
       }
+      //if (p.srcip == 2056072923) {printf("\n");}
+      addresses.push(it->nextOffset);
     }
+  }
 }
 
 
@@ -232,4 +263,28 @@ void DataPlane::doSRAM_updateAddresses(queue<uint32>& addresses, const tCounterI
     }
   }
 }
+
+int DataPlane::doSample(const Packet& p, int field, uint32 threshold) {
+  if (field == -1)
+    return 1;
+  else printf("field is %d\n", field);
+
+  uint32 hashvalue;
+  uint64 value = getField(p, field);
+  printf("value: %d, ", value);
+
+  if (field > 10 && field < 20) { // concat field/10,field%10
+    hashvalue = os_dietz64to32(value, hashA[0]);
+  }
+  else {
+    hashvalue = os_dietz_thorup32(value, MAXUINT32, hashA[0], hashB[0]);
+  }
+
+  printf("%f;   ", (1.0*hashvalue)/MAXUINT32);
+  int ret = hashvalue > threshold ? 0 : 1;
+  if (ret) printf("sampling.. ");
+  return ret;
+}
+
+
 

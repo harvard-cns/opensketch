@@ -1,7 +1,7 @@
 CC= g++
 CFLAGS= -g  -DDEBUG 
 LDFLAGS= -g -DDEBUG 
-SOURCES=  dataPlane.cc testHeavyHitters.cc taskHeavyHitters.cc taskSuperspreaders.cc sketchCountMin.cc  sketchBitmap.cc os_mangler.cc os_galoisField.cc common.cc 
+SOURCES=  dataPlane.cc testSuperSpreaders.cc taskHeavyHitters.cc taskSuperspreaders.cc sketchCountMin.cc  sketchBitmap.cc os_mangler.cc os_galoisField.cc common.cc 
 
 OBJECTS=$(SOURCES:.cc=.o)
 EXECUTABLE=run

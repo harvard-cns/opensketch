@@ -12,6 +12,11 @@ class DataPlane {
 
   vector<uint64> hashA, hashB; // hash seeds
   Mangler* mangler; // table for mangling before rev. hash
+  
+  int sampleField;
+  int sampleThreshold;
+
+
 
   map<int, tHashInfo> perSketchHashInfo; // sketchid - which field, how many, what range
   // per packet, hash per field max(how many) times and store in diff. map<int, vector<int>>
@@ -37,6 +42,7 @@ class DataPlane {
   // e.g., updateAddresses(startingOffset, counterInfoOfA)
   // then updateAddresses(addressesOfA, counterInfoOfB) to get final counter address
   
+  int doSample(const Packet& p, int field, uint32 threshold);
 
   void doHash(const Packet& p, map<int, tHashInfo >& perField, map<int, vector<uint32> >& perFieldValues );
   // uses perSketchHashInfo
@@ -50,15 +56,16 @@ class DataPlane {
   // for each task, based on packet p, perFieldHashValues
   // updates perTaskSRAM
 
-  uint32 getField(const Packet& p, int field);
+  uint64 getField(const Packet& p, int field);
  public:
   DataPlane();
   ~DataPlane();
 
-
+  int sampled;
   // normal hash functions return a sketch_id < 100
   // reversible ... > 100
   // for measurement objects to call
+  void addSampling(int field, uint32 threshold);
   int addHashFunctions(const tHashInfo& hashInfo); 
 
 
