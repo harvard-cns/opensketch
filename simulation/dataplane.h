@@ -18,11 +18,11 @@ class DataPlane {
   map<int, tHashInfo> perSketchRevHashInfo;
 
   map<int, tHashInfo> perFieldHashInfo;
-  map<int, vector<int> > perFieldHashValues;
+  map<int, vector<uint32> > perFieldHashValues;
   // when you want hashvalues for sketchid, lookup that field, get reqd. #values, mod by range
   
   map<int, tHashInfo> perFieldRevHashInfo;
-  map<int, vector<int> > perFieldRevHashValues;
+  map<int, vector<uint32> > perFieldRevHashValues;
 
   map<int, vector<int> > perTaskSRAM; // taskid - raw counters in SRAM
 
@@ -30,7 +30,7 @@ class DataPlane {
   //- id, #rows, counters_per_row, counter_size, update_type, next_offset 
   //- id and update_type and next_offset (e.g., for reversible) set by task
 
-  void doSRAM_updateAddresses(queue<int>& addresses, const tCounterInfo& counterInfo);
+  void doSRAM_updateAddresses(queue<uint32>& addresses, const tCounterInfo& counterInfo);
   // during packet processing, if sketch A is made of sketch B
   // final counter address is like A's counter 1 + B's counter, A's counter 2 + B's counter ..
   // so to get first addresses call with a vector containing starting offset (e.g., 0)
@@ -38,19 +38,19 @@ class DataPlane {
   // then updateAddresses(addressesOfA, counterInfoOfB) to get final counter address
   
 
-  void doHash(const Packet& p, map<int, tHashInfo >& perField, map<int, vector<int> >& perFieldValues );
+  void doHash(const Packet& p, map<int, tHashInfo >& perField, map<int, vector<uint32> >& perFieldValues );
   // uses perSketchHashInfo
   // for each field, hashes, mods by maximum range
   // fills in perFieldHashValues
 
-  void clearHash(map<int, tHashInfo >& perField, map<int, vector<int> >& perFieldValues);
+  void clearHash(map<int, tHashInfo >& perField, map<int, vector<uint32> >& perFieldValues);
 
   void doSRAM(const Packet& p, int task_id);
   // uses perTaskCounterInfo
   // for each task, based on packet p, perFieldHashValues
   // updates perTaskSRAM
 
-  int getField(const Packet& p, int field);
+  uint32 getField(const Packet& p, int field);
  public:
   DataPlane();
   ~DataPlane();
@@ -75,7 +75,7 @@ class DataPlane {
   void getHashByField();
   void getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInfo>& perField);
 
-  void getHashValues(int sketch_id, vector<int>& hashValues);
+  void getHashValues(int sketch_id, vector<uint32>& hashValues);
   // will lookup perSketchHashInfo for config, with that lookup field, get hash values
   // maybe public function, e.g., if reversible needs to know what seeds were used
   // will clear passed hashValues, and insert new ones, 
