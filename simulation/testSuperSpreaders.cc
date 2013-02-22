@@ -13,7 +13,7 @@ int main() {
   int numRows = 3;
   int countersPerRow = 109226;
 
-  int field2 = DST_IP;
+  int field2 = FIELD_DSTIP;
   int numBits = 46;
 
   // from cmu superspreaders
@@ -22,7 +22,7 @@ int main() {
   // r = 33
 
   // Magic numbers from 4.2/ sketch manager
-  ss.setUserPreferencesDirectly(field, numRows, countersPerRow,\
+  ss.setUserPreferencesDirectly(field1, numRows, countersPerRow,\
 				field2, numBits);
 
   ss.configureDataPlane(dp);
@@ -91,10 +91,13 @@ int main() {
       printf("infile is no longer good.\n");
     }
       ss.updateCountersFromDataPlane(dp);
-      inet_aton("219.46.141.122", &tmp);
-      
+      inet_aton("219.46.141.122", &tmp);      
       printf("%s or %d: %d\n", "219.46.141.122", tmp.s_addr, ss.queryGivenKey(tmp.s_addr));
       printf("%d: %d\n", 2056072923, ss.queryGivenKey(2056072923));
+
+      inet_aton("35.216.240.203", &tmp);
+      printf("%s or %d: %d\n", "35.216.240.203", tmp.s_addr,ss.queryGivenKey(tmp.s_addr));
+      
       infile.close();
   }
 

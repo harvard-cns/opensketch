@@ -15,16 +15,16 @@ DataPlane::DataPlane() {
 DataPlane::~DataPlane(){
 }
 
-int DataPlane::getField(const Packet& p, int field) {
+uint32 DataPlane::getField(const Packet& p, int field) {
     if (field == FIELD_SRCIP) return p.srcip;
     else if (field == FIELD_DSTIP) return p.dstip;
   }
   
-void DataPlane::getHashValues(int sketch_id, vector<int>& hashValues) {
+void DataPlane::getHashValues(int sketch_id, vector<uint32>& hashValues) {
     // assert(it's not .end())
     hashValues.clear();
     tHashInfo hashInfo;
-    vector<int> allHashValues;
+    vector<uint32> allHashValues;
 
     if (sketch_id < 100) {
       hashInfo = perSketchHashInfo[sketch_id];
@@ -105,16 +105,16 @@ void DataPlane::getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInf
     for(it = perSketch.begin(); it != perSketch.end(); ++it) {
       field = it->second.field;
       hashInfo = it->second;
-      numHashValues = hashInfo.numHashValues;
-      range = hashInfo.range;
       found = perField.find(field); 
       
       if (found == perField.end()){
-	best.numHashValues = numHashValues;
-	best.range = range;
+	best.numHashValues = hashInfo.numHashValues;
+	best.range = hashInfo.range;
+	best.rev = hashInfo.rev;
+	best.field = hashInfo.field;
 	perField.insert(pair<int, tHashInfo>(field, best));
-	vector<int> emptyHashValues;
-	perFieldHashValues.insert(pair<int, vector<int> >(field, emptyHashValues));
+	vector<uint32> emptyHashValues;
+	perFieldHashValues.insert(pair<int, vector<uint32> >(field, emptyHashValues));
       }
       else {
 	existing = &(found->second);
@@ -130,7 +130,7 @@ void DataPlane::getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInf
 }
 
 
-void DataPlane::doHash(const Packet& p, map<int, tHashInfo>& perField, map<int, vector<int> >& perFieldValues ) {
+void DataPlane::doHash(const Packet& p, map<int, tHashInfo>& perField, map<int, vector<uint32> >& perFieldValues ) {
 
 
     map<int, tHashInfo>::iterator it2;
@@ -140,14 +140,14 @@ void DataPlane::doHash(const Packet& p, map<int, tHashInfo>& perField, map<int, 
     for(it2 = perField.begin(); it2 != perField.end(); ++it2) {
       field = it2->first;
       tmp = it2->second;
-      int x = getField(p, field);
+      uint32 x = getField(p, field);
 
       for(int i = 0; i < tmp.numHashValues; i++) {
-	int hashvalue;
+	uint32 hashvalue;
 	if (tmp.rev == HASHTYPE_DIETZTHORUP32) {
 	  hashvalue = os_dietz_thorup32(x, tmp.range, hashA[i], hashB[i]);}
 	else if (tmp.rev == HASHTYPE_REVERSIBLE8TO3) {
-	  uint32 value = mangler->MangleShortTable((uint32) x); 
+	  uint32 value = mangler->MangleShortTable(x); 
 	  hashvalue = reversible4096(value, tmp.range, hashA[i]);
 	}
 	 perFieldValues[field].push_back(hashvalue);
@@ -158,10 +158,9 @@ void DataPlane::doHash(const Packet& p, map<int, tHashInfo>& perField, map<int, 
 
 }
 
-void DataPlane::clearHash(map<int, tHashInfo >& perField, map<int, vector<int> >& perFieldValues) {
+void DataPlane::clearHash(map<int, tHashInfo >& perField, map<int, vector<uint32> >& perFieldValues) {
 
     map<int, tHashInfo>::iterator it2;
-    vector<int> hashValues;
     tHashInfo tmp;
     int field;
 
@@ -181,26 +180,30 @@ void DataPlane::clearHash(map<int, tHashInfo >& perField, map<int, vector<int> >
 void DataPlane::doSRAM(const Packet& p, int task_id){    
   vector<tCounterInfo> counterInfos = perTaskCounterInfo[task_id];   
   // offsets are relative to start of task's SRAM
-    queue<int> addresses;
-    addresses.push(0);
+  queue<uint32> addresses;
+  addresses.push(0);
+    
+  if (p.srcip == -873408477) {
+    printf("check!!\n");
+  }
 
-
-    vector<tCounterInfo>::iterator it;
-    for (it = counterInfos.begin(); it != counterInfos.end(); ++it) {
-      doSRAM_updateAddresses(addresses, *it);
-      if (it->updateType == UPDATETYPE_SET || it->updateType == UPDATETYPE_INCREMENT) {
-	int addr;
-	while(!addresses.empty()) {
-	  addr = addresses.front();
-	  addresses.pop();
-	  if (it->updateType == UPDATETYPE_SET) perTaskSRAM[task_id][addr] = 1;
-	  else if (it->updateType == UPDATETYPE_INCREMENT) {
-	    perTaskSRAM[task_id][addr]++;
-	    if (p.srcip == 2056072923) {
-	      //printf("perTaskSRAM[%d][%d]++ is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
+  vector<tCounterInfo>::iterator it;
+  for (it = counterInfos.begin(); it != counterInfos.end(); ++it) {
+    doSRAM_updateAddresses(addresses, *it);
+    if (it->updateType == UPDATETYPE_SET || it->updateType == UPDATETYPE_INCREMENT) {
+      uint32 addr;
+      while(!addresses.empty()) {
+	addr = addresses.front();
+	addresses.pop();
+	if (it->updateType == UPDATETYPE_SET) perTaskSRAM[task_id][addr] = 1;
+	else if (it->updateType == UPDATETYPE_INCREMENT) {
+	  perTaskSRAM[task_id][addr]++;
+	}
+	    // -873408477 2056072923
+	if (p.srcip == -873408477) {
+	      printf("perTaskSRAM[%d][%d] is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
 	    }
 
-	  }
 	}
 	//if (p.srcip == 2056072923) {printf("\n");}
 	addresses.push(it->nextOffset);
@@ -209,11 +212,11 @@ void DataPlane::doSRAM(const Packet& p, int task_id){
 }
 
 
-void DataPlane::doSRAM_updateAddresses(queue<int>& addresses, const tCounterInfo& counterInfo){
-  int startingAddresses = addresses.size();
-  int offset;
-  vector<int> hashValues;
-  int index;
+void DataPlane::doSRAM_updateAddresses(queue<uint32>& addresses, const tCounterInfo& counterInfo){
+  uint32 startingAddresses = addresses.size();
+  uint32 offset;
+  vector<uint32> hashValues;
+  uint32 index;
   while(startingAddresses > 0) {
     offset = addresses.front();
     addresses.pop(); 

@@ -9,6 +9,7 @@ void SketchCountMin::setup(int field, int numRows, int countersPerRow) {
   hashInfo.field = field;
   hashInfo.numHashValues = numRows;
   hashInfo.range = countersPerRow;
+  hashInfo.rev = HASHTYPE_DIETZTHORUP32;
 
   counterInfo.numRows = numRows;
   counterInfo.countersPerRow = countersPerRow;

@@ -56,8 +56,11 @@ int TaskSuperSpreaders::queryGivenKey(int key) {
   vector<int> hashValues;
 
   getHashValues(key, countMin.getHashInfo(), hashValues);
-  //for (int i = 0; i < hashValues.size(); i++) {printf("%d, ", hashValues[i]);}
-  //printf(" are the hash values for this key %d.\n", key);
+  
+  if (key == -873408477) {
+    for (int i = 0; i < hashValues.size(); i++) {printf("%d, ", hashValues[i]);}
+    printf(" are the hash values for this key %d.\n", key);
+  }
 
   tCounterInfo countMinCounterInfo = countMin.getCounterInfo();
   countMinCounterInfo.counterSize = bitmap.getSize();
@@ -68,16 +71,24 @@ int TaskSuperSpreaders::queryGivenKey(int key) {
 
   int addr;
   while(!addresses.empty()) {
-    //printf("getting counter at %d\n", addr);
+    if (key == -873408477) {
+	printf("getting counter at %d\n", addr);
+      }
     addr = addresses.front();      
     addresses.pop();
 
     vector<int> countsForBitmap;
-    for(int i = 0; i < bitmap.getSize(); i++) {
-      countsForBitmap.push_back(sramCounters[addr+i]);
+    int tmp;
+    int bitsSet = 0;
+    int totalBits = bitmap.getSize();
+    for(int i = 0; i < totalBits; i++) {
+      tmp = sramCounters[addr+i];
+      bitsSet += tmp;
+      countsForBitmap.push_back(tmp);
     }
-    int bitmapEstimate = bitmap.query(counts);
+    printf("%d set out of %d\n", bitsSet, bitmap.getSize());
 
+    int bitmapEstimate = bitmap.query(countsForBitmap);
     counts.push_back(bitmapEstimate);
   }
 

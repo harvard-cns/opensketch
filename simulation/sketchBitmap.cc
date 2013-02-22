@@ -9,6 +9,7 @@ void SketchBitmap::setup(int field, int numBits) {
   hashInfo.field = field;
   hashInfo.numHashValues = 1;
   hashInfo.range = numBits;
+  hashInfo.rev = HASHTYPE_DIETZTHORUP32;
 
   counterInfo.numRows = 1;
   counterInfo.countersPerRow = numBits;
