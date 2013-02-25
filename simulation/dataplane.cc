@@ -72,7 +72,7 @@ int DataPlane::setSRAMSize(int sramSize){
 void DataPlane::addSampling(int field, uint32 threshold) {
     sampleField = field;
     sampleThreshold = threshold;
-    printf("Sampling with ratio %f\n", (1.0*sampleThreshold)/MAXUINT32);
+    //printf("Sampling with ratio %f\n", (1.0*sampleThreshold)/MAXUINT32);
   }
  
 
@@ -206,18 +206,18 @@ void DataPlane::doSRAM(const Packet& p, int task_id){
   queue<uint32> addresses;
   addresses.push(0);
     
-  if (p.srcip == -873408477) {
+  /*if (p.srcip == -873408477) {
     printf("check!!\n");
     printf("counterInfos.size() %u\n", counterInfos.size());
- }
+    }*/
 
   vector<tCounterInfo>::iterator it;
   for (it = counterInfos.begin(); it != counterInfos.end(); ++it) {
     doSRAM_updateAddresses(addresses, *it);
 
-  if (p.srcip == -873408477) {
+    /*if (p.srcip == -873408477) {
     printf("addresses.size() %u\n", addresses.size());
- }
+    }*/
     
     if (it->updateType == UPDATETYPE_SET || it->updateType == UPDATETYPE_INCREMENT) {
       uint32 addr;
@@ -231,9 +231,9 @@ void DataPlane::doSRAM(const Packet& p, int task_id){
 	  perTaskSRAM[task_id][addr]++;
 	}
 	    // -873408477 2056072923
-	if (p.srcip == -873408477) {
+	/*if (p.srcip == -873408477) {
 	  printf("perTaskSRAM[%d][%d] is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
-	}
+	  }*/
 
       }
       //if (p.srcip == 2056072923) {printf("\n");}
@@ -267,11 +267,11 @@ void DataPlane::doSRAM_updateAddresses(queue<uint32>& addresses, const tCounterI
 int DataPlane::doSample(const Packet& p, int field, uint32 threshold) {
   if (field == -1)
     return 1;
-  else printf("field is %d\n", field);
+  //  else printf("field is %d\n", field);
 
   uint32 hashvalue;
   uint64 value = getField(p, field);
-  printf("value: %d, ", value);
+  //printf("value: %d, ", value);
 
   if (field > 10 && field < 20) { // concat field/10,field%10
     hashvalue = os_dietz64to32(value, hashA[0]);
@@ -280,9 +280,9 @@ int DataPlane::doSample(const Packet& p, int field, uint32 threshold) {
     hashvalue = os_dietz_thorup32(value, MAXUINT32, hashA[0], hashB[0]);
   }
 
-  printf("%f;   ", (1.0*hashvalue)/MAXUINT32);
+  //printf("%f;   ", (1.0*hashvalue)/MAXUINT32);
   int ret = hashvalue > threshold ? 0 : 1;
-  if (ret) printf("sampling.. ");
+  //if (ret) printf("sampling.. ");
   return ret;
 }
 
