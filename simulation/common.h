@@ -23,6 +23,11 @@
 #include <numeric>
 #include <cmath>
 
+
+// for OS_CounterRevAnalyze
+#include <list>
+#include <iostream>
+
 typedef unsigned long long  uint64;
 typedef unsigned int        uint32;
 typedef unsigned short      uint16;
@@ -44,6 +49,14 @@ const int UPDATETYPE_NEXT = 3;
 
 const int HASHTYPE_DIETZTHORUP32 = 1;
 const int HASHTYPE_REVERSIBLE8TO3 = 2;
+
+const uint32 REVERSIBLE_NUMROWS = 5;
+const uint32 REVERSIBLE_COUNTERSPERROW = 4096;
+const uint32 REVERSIBLE_ITERSIZE = 128;//64;
+const uint32 REVERSIBLE_NUMDIVS = 4;
+const uint32 REVERSIBLE_NUMKEYS = 256;
+const uint32 REVERSIBLE_R = 2;
+const uint32 REVERSIBLE_BINSPERDIV = 8;
 
 typedef union {
   uint64 as_int64; 
@@ -71,7 +84,11 @@ namespace hash{
 		      1106582827276932161,\
 		      7850759173320174309,\
 		      8297516128533878091};
+
+  const uint64 mangleSeed1 = 38409845058049, mangleSeed2 = 9475047563245;
 };
+
+
 
 uint32 os_dietz_thorup32(uint32 x, uint32 bins, uint64 a, uint64 b);
 uint8 os_dietz8to3(uint8 x, uint8 a);
@@ -83,4 +100,6 @@ double os_current_time();
 // Generates a 32-bit random string
 // Note that rand() is not random enough -- it has a period of 2^32.
 uint32 os_rand32bit();
+
+void os_ipint2string(unsigned long int a, char  *b);
 #endif

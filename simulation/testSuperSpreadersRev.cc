@@ -1,20 +1,21 @@
 #include "common.h"
-#include "taskSuperSpreaders.h"
+#include "taskSuperSpreadersRev.h"
 #include "dataPlane.h"
 
 using namespace std;
 
 int main() {
-  TaskSuperSpreaders ss;
+  TaskSuperSpreadersRev ss;
   DataPlane dp;
   ss.getHashSeedsFromDataPlane(dp);
+  ss.getManglerFromDataPlane(dp);
 
   int field1 = FIELD_SRCIP;
   int numRows = 3;
   int countersPerRow = 109226;
 
   int field2 = FIELD_DSTIP;
-  int numBits = 46;
+  int numBits = 60;
 
   // from cmu superspreaders
   // for k = 200, b = 2, delta = 0.2
@@ -23,7 +24,7 @@ int main() {
 
   // Magic numbers from 4.2/ sketch manager
   ss.setUserPreferencesDirectly(field1, numRows, countersPerRow,\
-				field2, numBits, 44.83/200);
+				field2, numBits, 44.83/200, 33);
 
   ss.configureDataPlane(dp);
   dp.getHashByField();
@@ -90,6 +91,7 @@ int main() {
       }
       printf("infile is no longer good.\n");
       printf("sampled %d out of %d i.e. %f fraction\n", dp.sampled, packetCount, (1.0*dp.sampled/ packetCount));
+
     }
       ss.updateCountersFromDataPlane(dp);
      
@@ -127,7 +129,18 @@ int main() {
       printf("%d's count should be %d\n\n", tmp.s_addr, 4993);
       printf("if count is %u, it filled up.\n", MAXUINT32);
 
-      
+
+      vector<int> superSpreaders;
+      ss.getSuperSpreaders(superSpreaders);
+      vector<int>::iterator it;
+
+      for (it = superSpreaders.begin(); it != superSpreaders.end(); it++)
+	{
+	  char tmp[20];
+	  os_ipint2string(*it,tmp);
+	  printf("%s\n",tmp);
+	}
+
       infile.close();
   }
 

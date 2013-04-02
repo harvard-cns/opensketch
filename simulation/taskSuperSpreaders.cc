@@ -1,14 +1,56 @@
 #include "taskSuperSpreaders.h"
 
-TaskSuperSpreaders::TaskSuperSpreaders(){
+void TaskSuperSpreaders::getSamplingConfig(double k, double b, double delta, double& r, double& c1) {
+  double log1delta = log(1.0/delta);
+  double e = exp(1.0);
+  
+  // set c1
+  if (b <= 3 ) 
+    {
+      double monster = (3*b + 2*b* sqrt(6*b) + 2 * b *b)/ ( (b-1) * (b-1))  ;
+      c1 = log1delta * monster;
+    }
+  else
+    {
+      if ( (b > 3) && (b < (2 * e * e)) )
+	{
+	  double max1 = (  b > 2/ ( (1 - e/b) * (1-e/b) )  ) ? b: 2/ ( (1 - e/b) * (1-e/b)); 
+	  c1 = log1delta * max1;
+	}
+      else
+	{
+	  c1 = 8 * log1delta;
+	}
+    }
+  // set r
+  if (b <= 3 ) 
+    {
+      r = c1/b +  sqrt ( 3 * c1 * log1delta / b) ;
+    }
+  else
+    {
+      if ( (b > 3) && (b < (2 * e * e)) )
+	{
+	  r = e * c1 / b; 
+	}
+      else
+	{
+	  r = c1/2;
+	}
+    } 
+  r = ceil(r);
+
 }
 
-TaskSuperSpreaders::~TaskSuperSpreaders(){
+void TaskSuperSpreaders::setUserPreferencesDirectly1(int k, int b, int delta, int field1, int field2, int numRows, int countersPerRow, int numBits) {
+  double r, c1;
+  getSamplingConfig(k, b, delta, r, c1);
+  setUserPreferencesDirectly(field1, numRows, countersPerRow, field2, numBits, r, c1/k);
 }
 
-void TaskSuperSpreaders::setUserPreferencesDirectly(int field1, int numRows, int countersPerRow, int field2, int numBits, double ratio) {
+void TaskSuperSpreaders::setUserPreferencesDirectly(int field1, int numRows, int countersPerRow, int field2, int numBits, int max, double ratio) {
   countMin.setup(field1, numRows, countersPerRow);
-  bitmap.setup(field2, numBits);
+  bitmap.setup(field2, numBits, max);
   samplingRatio = ratio;
 }
 
@@ -42,14 +84,6 @@ void TaskSuperSpreaders::configureDataPlane(DataPlane &dataPlane) {
   dataPlane.setPacketProcessing(task_id, counterInfos);
 }
 
-void TaskSuperSpreaders::getHashSeedsFromDataPlane(const DataPlane &dataPlane) {
-  hashA = dataPlane.getHashA();
-  hashB = dataPlane.getHashB();
-}
-
-void TaskSuperSpreaders::updateCountersFromDataPlane(DataPlane &dataPlane) {
-  sramCounters = dataPlane.getSRAM(task_id);
-}
 
 int TaskSuperSpreaders::queryGivenKey(int key) {
   vector<int> counts;
@@ -89,7 +123,7 @@ int TaskSuperSpreaders::queryGivenKey(int key) {
       bitsSet += tmp;
       countsForBitmap.push_back(tmp);
     }
-    printf("%d set out of %d\n", bitsSet, bitmap.getSize());
+    //    printf("%d set out of %d\n", bitsSet, bitmap.getSize());
 
     int bitmapEstimate = bitmap.query(countsForBitmap);
     counts.push_back(bitmapEstimate);
@@ -103,49 +137,4 @@ int TaskSuperSpreaders::queryGivenPacket(const Packet& p){
   int key = getField(p, countMin.getHashInfo().field);
   return queryGivenKey(key);
 }
-
-void TaskSuperSpreaders::updateAddresses(queue<int>& addresses, const tCounterInfo& counterInfo, const vector<int>& hashValues) {
-  int startingAddresses = addresses.size();
-  int offset;
-  int index;
-  while(startingAddresses > 0) {
-    offset = addresses.front(); 
-    addresses.pop();
-    startingAddresses--;
-    for (int i = 0; i < counterInfo.numRows; i++) {
-      //printf("address in row %d\n", i);
-      index = offset;
-      //printf(".. index = offset %d\n", index);
-      index += i * counterInfo.countersPerRow;
-      //printf(".. index += i * counterInfo.countersPerRow %d\n", index);
-      index += hashValues[i] % counterInfo.countersPerRow;
-      //printf(".. hashValues[i] mod counterInfo.countersPerRow %d\n", index);
-      index *= counterInfo.counterSize;
-      //printf(".. index *= counterInfo.counterSize %d\n", index);
-      addresses.push(index);
-      //printf(".. pushing %d\n", index);
-    }
-  }
-
-}
-
-int TaskSuperSpreaders::getField(const Packet& p, int field){
-  if (field == FIELD_SRCIP) return p.srcip;
-  else if (field == FIELD_DSTIP) return p.dstip;
-
-}
-
-
-void TaskSuperSpreaders::getHashValues(int x, const tHashInfo& hashInfo, vector<int>& hashValues) {
-  hashValues.clear();
-  for(int i = 0; i < hashInfo.numHashValues; i++) {
-    hashValues.push_back(os_dietz_thorup32(x, hashInfo.range, hashA[i], hashB[i]));
-  }
-}
-
-int TaskSuperSpreaders::getTaskId() {
-  return task_id;
-}
-
-
 

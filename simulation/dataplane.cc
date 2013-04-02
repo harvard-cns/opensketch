@@ -9,7 +9,7 @@ DataPlane::DataPlane() {
     hashA.push_back(hash::A[i]);
     hashB.push_back(hash::B[i]);
   }
-  mangler = new Mangler();
+  mangler = new Mangler(hash::mangleSeed1, hash::mangleSeed2);
   sampleField = -1;
   sampled = 0;
 }
@@ -40,7 +40,7 @@ void DataPlane::getHashValues(int sketch_id, vector<uint32>& hashValues) {
       allHashValues = perFieldHashValues[hashInfo.field];
     }
     else {
-      hashInfo = perSketchRevHashInfo[sketch_id%100]; // rev. range is 2^12 btw
+      hashInfo = perSketchRevHashInfo[sketch_id]; // rev. range is 2^12 btw
       allHashValues = perFieldRevHashValues[hashInfo.field];
 
     }
@@ -48,6 +48,7 @@ void DataPlane::getHashValues(int sketch_id, vector<uint32>& hashValues) {
       hashValues.push_back(allHashValues[i]%hashInfo.range);
     }
   }
+
 
 void DataPlane::hashSeeds(const vector<uint64>& A, const vector<uint64>& B) {
     hashA = A;
@@ -85,7 +86,7 @@ int DataPlane::addHashFunctions(const tHashInfo& hashInfo) {
     perSketchHashInfo.insert(pair<int, tHashInfo>(task_id, myHashInfo));
   }
   else if (hashInfo.rev == HASHTYPE_REVERSIBLE8TO3) {
-    task_id = perSketchRevHashInfo.size()+1+100;
+    task_id = perSketchRevHashInfo.size()+ 1 + 100; // task_ids start at 101
     perSketchRevHashInfo.insert(pair<int, tHashInfo> (task_id, myHashInfo));}
   
   return task_id;
@@ -101,19 +102,22 @@ void DataPlane::processPacket(const Packet& p, int task_id) {
 
   //printf("calling doHash.\n");
   doHash(p, perFieldHashInfo, perFieldHashValues);
+  doHash(p, perFieldRevHashInfo, perFieldRevHashValues);
 
   //printf("calling doSRAM.\n");
   doSRAM(p, task_id);
 
   clearHash(perFieldHashInfo, perFieldHashValues);
+  clearHash(perFieldRevHashInfo, perFieldRevHashValues);
 }
 
 void DataPlane::getHashByField() {
-  getHashByField(perSketchHashInfo, perFieldHashInfo);
-  getHashByField(perSketchRevHashInfo, perFieldRevHashInfo);
+  getHashByField(perSketchHashInfo, perFieldHashInfo, perFieldHashValues);
+  getHashByField(perSketchRevHashInfo, perFieldRevHashInfo, perFieldRevHashValues);
 }
 
-void DataPlane::getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInfo>& perField) {
+void DataPlane::getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInfo>& perField,\
+			       map<int, vector<uint32> >& perFieldValues) {
 
     map<int, tHashInfo>::iterator it;
     map<int, tHashInfo>::iterator found;
@@ -137,7 +141,7 @@ void DataPlane::getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInf
 	best.field = hashInfo.field;
 	perField.insert(pair<int, tHashInfo>(field, best));
 	vector<uint32> emptyHashValues;
-	perFieldHashValues.insert(pair<int, vector<uint32> >(field, emptyHashValues));
+	perFieldValues.insert(pair<int, vector<uint32> >(field, emptyHashValues));
       }
       else {
 	existing = &(found->second);
@@ -231,13 +235,14 @@ void DataPlane::doSRAM(const Packet& p, int task_id){
 	  perTaskSRAM[task_id][addr]++;
 	}
 	    // -873408477 2056072923
-	/*if (p.srcip == -873408477) {
-	  printf("perTaskSRAM[%d][%d] is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
-	  }*/
+	//	if (p.srcip == -873408477) {
+	// printf("perTaskSRAM[%d][%d] is now %d, ", task_id, addr, perTaskSRAM[task_id][addr]);
+	// }
 
       }
       //if (p.srcip == 2056072923) {printf("\n");}
       addresses.push(it->nextOffset);
+      //      printf("offset for next sketch %d\n", it->nextOffset);
     }
   }
 }
@@ -255,14 +260,15 @@ void DataPlane::doSRAM_updateAddresses(queue<uint32>& addresses, const tCounterI
   
     getHashValues(counterInfo.sketch_id, hashValues);
     for (int i = 0; i < counterInfo.numRows; i++) {
-      index = offset;
-      index += i * counterInfo.countersPerRow;
-      index += hashValues[i] % counterInfo.countersPerRow;
-      index *= counterInfo.counterSize;
-      addresses.push(index);
+      index = i * counterInfo.countersPerRow;
+      index += (hashValues[i] % counterInfo.countersPerRow);
+      index *=  counterInfo.counterSize;
+      
+      addresses.push(offset + index);
     }
   }
 }
+
 
 int DataPlane::doSample(const Packet& p, int field, uint32 threshold) {
   if (field == -1)

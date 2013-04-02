@@ -1,19 +1,12 @@
 #ifndef __SKETCHBITMAP_H
 #define __SKETCHBITMAP_H
-#include "common.h"
+#include "sketch.h"
 
-class SketchBitmap {
-  tHashInfo hashInfo;
-  tCounterInfo counterInfo;
+class SketchBitmap : public Sketch {
+  int max;
 
  public:
-  SketchBitmap();
-  ~SketchBitmap();
-
-  void setup(int field, int numBits); // directly
-  tHashInfo getHashInfo();
-  tCounterInfo getCounterInfo();
-  int getSize();
+  void setup(int field, int numBits, int max); // directly
   int query(const vector<int>& counts);
 };
 #endif  

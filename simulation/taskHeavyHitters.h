@@ -2,41 +2,43 @@
 #define __TASKHEAVYHITTERS_H
 
 #include "common.h"
+#include "task.h"
 #include "sketchCountMin.h"
 #include "dataPlane.h"
 
-class TaskHeavyHitters
+class TaskHeavyHitters : public Task
 {
+
+ protected:
+  // Sketches used
+  // Sketch ids
   SketchCountMin countMin;
-  int task_id; // to get sram from dataplane
   int cm_id; // not used
-  // this and dataplane each have their own version of computing hash function, synced of course
+
+  // Fields
   int field;
+
+  // Error
   double errorPc;
   double confidence;
-  vector<uint64> hashA, hashB;
-  vector<int> sramCounters;
-
-  void updateAddresses(queue<int>& addresses, const tCounterInfo& counterInfo, const vector<int>& hashValues);
-  void getHashValues(int x, const tHashInfo& hashInfo, vector<int>& hashValues);
-  int getField(const Packet& p, int field);
 
  public:
-  TaskHeavyHitters();
-  ~TaskHeavyHitters();
-  
+
+  // Find configuration based on error
   void setUserPreferencesGivenError(int field, double errorPc, double confidence);
   void setUserPreferencesGivenSpace(int field, int spaceB, double confidence);
   void setUserPreferencesDirectly(int field, int numRows, int countersPerRow);
 
+  // Configure data plane
   void configureDataPlane(DataPlane &dataPlane);
-  void getHashSeedsFromDataPlane(const DataPlane &dataPlane);
-  void updateCountersFromDataPlane(DataPlane &dataPlane);
 
-  int getTaskId();
-
+   
+  // Query Given Key
+  // Query Given Packet
   int queryGivenKey(int key);
   int queryGivenPacket(const Packet& p);
+
+
 };
 
 #endif 

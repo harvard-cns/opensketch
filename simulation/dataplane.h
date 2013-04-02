@@ -80,7 +80,7 @@ class DataPlane {
   void processPacket(const Packet& p, int task_id);
 
   void getHashByField();
-  void getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInfo>& perField);
+  void getHashByField(map<int, tHashInfo>& perSketch, map<int, tHashInfo>& perField, map<int, vector<uint32> >& perFieldValues);
 
   void getHashValues(int sketch_id, vector<uint32>& hashValues);
   // will lookup perSketchHashInfo for config, with that lookup field, get hash values
@@ -90,6 +90,9 @@ class DataPlane {
   // of course count min and bitmap need, when we query a packet or addr to verify or jlt
   vector<uint64> getHashA() const {return hashA;}
   vector<uint64> getHashB() const {return hashB;}
+  uint64 getMangleSeed1() const {return mangler->seed1;}
+  uint64 getMangleSeed2() const {return mangler->seed2;}
+
   vector<int> getSRAM(int task_id) {return perTaskSRAM[task_id];}
 };
 

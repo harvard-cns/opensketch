@@ -1,35 +1,10 @@
 #include "sketchBitmap.h"
 
-
-SketchBitmap::SketchBitmap() {
-}
-
-void SketchBitmap::setup(int field, int numBits) {
-
-  hashInfo.field = field;
-  hashInfo.numHashValues = 1;
-  hashInfo.range = numBits;
-  hashInfo.rev = HASHTYPE_DIETZTHORUP32;
-
-  counterInfo.numRows = 1;
-  counterInfo.countersPerRow = numBits;
+void SketchBitmap::setup(int field, int numBits, int max) {
+  Sketch::setup(field, 1, numBits);
   counterInfo.updateType = UPDATETYPE_SET;
+  this->max = max;
   // sketch_id, nextOffset, counterSize is set by Calling Function
-}
-
-SketchBitmap::~SketchBitmap() {
-}
-
-tHashInfo SketchBitmap::getHashInfo() {
-  return hashInfo;
-}
-
-tCounterInfo SketchBitmap::getCounterInfo() {
-  return counterInfo;
-}
-
-int SketchBitmap::getSize(){
-  return counterInfo.numRows * counterInfo.countersPerRow;
 }
 
 int SketchBitmap::query(const vector<int>& counts) {
@@ -37,7 +12,13 @@ int SketchBitmap::query(const vector<int>& counts) {
   int numBits = counts.size();
   int zeroBits = numBits - setBits;
 
-  double estimate = zeroBits * log(((double) numBits)/zeroBits);
+  double load = ((double)max)/numBits;
+  double logEmpty =  log(((double) numBits)/zeroBits);
+  double estimate = numBits * logEmpty;
+
+  if (zeroBits < 0.3 * numBits) {return (load * numBits * log(1.0/0.3)) + 1;}
+  //  if (numBits == zeroBits) return MAXUINT32;
+
   return (int) estimate;
 }
  

@@ -8,9 +8,10 @@
 
 void Mangler::InitCharTable(GaloisField *gf)
 	{
-	uint64 i, a, b;
+		uint64 i, a, b;
 
-	a = os_rand32bit();
+	//a = os_rand32bit();
+		a = seed1;
 	b = gf->Inv(a);
 	
 	for (i = 0; i < 256; i++)
@@ -28,9 +29,10 @@ void Mangler::InitCharTable(GaloisField *gf)
 
 void Mangler::InitShortTable(GaloisField *gf)
 	{
-	uint64 i, a, b;
+		uint64 i, a, b;
 
-	a = os_rand32bit();
+ 	//a = os_rand32bit();
+		a = seed2;
 	b = gf->Inv(a);
 	
 	for (i = 0; i < 65536; i++)

@@ -12,11 +12,16 @@
 
 class Mangler {
 public:
-	Mangler()
+	uint64 seed1, seed2;
+
+	Mangler(uint64 a1, uint64 a2)
 		{
-		// gf32 is initialized in GaloisField.c
-		InitCharTable(gf32);
-		InitShortTable(gf32);
+			// gf32 is initialized in GaloisField.c
+			seed1 = a1;
+			seed2 = a2;
+
+			InitCharTable(gf32);
+			InitShortTable(gf32);
 		}
 	
 	~Mangler()

@@ -1,10 +1,5 @@
 #include "taskHeavyHitters.h"
 
-TaskHeavyHitters::TaskHeavyHitters(){
-}
-
-TaskHeavyHitters::~TaskHeavyHitters(){
-}
 
 void TaskHeavyHitters::setUserPreferencesDirectly(int field, int numRows, int countersPerRow) {
   countMin.setup(field, numRows, countersPerRow);
@@ -28,14 +23,6 @@ void TaskHeavyHitters::configureDataPlane(DataPlane &dataPlane) {
   dataPlane.setPacketProcessing(task_id, counterInfos);
 }
 
-void TaskHeavyHitters::getHashSeedsFromDataPlane(const DataPlane &dataPlane) {
-  hashA = dataPlane.getHashA();
-  hashB = dataPlane.getHashB();
-}
-
-void TaskHeavyHitters::updateCountersFromDataPlane(DataPlane &dataPlane) {
-  sramCounters = dataPlane.getSRAM(task_id);
-}
 
 int TaskHeavyHitters::queryGivenKey(int key) {
   vector<int> counts;
@@ -69,49 +56,3 @@ int TaskHeavyHitters::queryGivenPacket(const Packet& p){
   int key = getField(p, field);
   return queryGivenKey(key);
 }
-
-void TaskHeavyHitters::updateAddresses(queue<int>& addresses, const tCounterInfo& counterInfo, const vector<int>& hashValues) {
-  int startingAddresses = addresses.size();
-  int offset;
-  int index;
-  while(startingAddresses > 0) {
-    offset = addresses.front(); 
-    addresses.pop();
-    startingAddresses--;
-    for (int i = 0; i < counterInfo.numRows; i++) {
-      //printf("address in row %d\n", i);
-      index = offset;
-      //printf(".. index = offset %d\n", index);
-      index += i * counterInfo.countersPerRow;
-      //printf(".. index += i * counterInfo.countersPerRow %d\n", index);
-      index += hashValues[i] % counterInfo.countersPerRow;
-      //printf(".. hashValues[i] mod counterInfo.countersPerRow %d\n", index);
-      index *= counterInfo.counterSize;
-      //printf(".. index *= counterInfo.counterSize %d\n", index);
-      addresses.push(index);
-      //printf(".. pushing %d\n", index);
-    }
-  }
-
-}
-
-int TaskHeavyHitters::getField(const Packet& p, int field){
-  if (field == FIELD_SRCIP) return p.srcip;
-  else if (field == FIELD_DSTIP) return p.dstip;
-
-}
-
-
-void TaskHeavyHitters::getHashValues(int x, const tHashInfo& hashInfo, vector<int>& hashValues) {
-  hashValues.clear();
-  for(int i = 0; i < hashInfo.numHashValues; i++) {
-    hashValues.push_back(os_dietz_thorup32(x, hashInfo.range, hashA[i], hashB[i]));
-  }
-}
-
-int TaskHeavyHitters::getTaskId() {
-  return task_id;
-}
-
-
-

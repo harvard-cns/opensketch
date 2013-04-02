@@ -84,3 +84,10 @@ uint32 os_rand32bit()
   return(base);
 }
 
+
+void os_ipint2string(unsigned long int a, char  *b)
+{
+  struct in_addr tmp;
+  tmp.s_addr = a;
+  strcpy(b,inet_ntoa(tmp));
+}
